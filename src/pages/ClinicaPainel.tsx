@@ -6,7 +6,19 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import logo from "@/assets/logo-diagnelas.png";
 
-const consultas = [
+type ConsultaType = {
+  paciente: string;
+  data: string;
+  status: string;
+  especialidade: string;
+  email: string;
+  telefone: string;
+  valor: number;
+  pagamento: string;
+  relatorio: boolean;
+};
+
+const consultas: ConsultaType[] = [
   {
     paciente: "Maria Silva",
     data: "14 jun — 10:00",
@@ -42,18 +54,26 @@ const consultas = [
   },
 ];
 
+type FilterType = "todas" | "confirmadas" | "pendentes";
+
 const ClinicaPainel = () => {
   const navigate = useNavigate();
-  const [selectedConsulta, setSelectedConsulta] = useState<typeof consultas[0] | null>(null);
-  const [showPix, setShowPix] = useState<typeof consultas[0] | null>(null);
+  const [selectedConsulta, setSelectedConsulta] = useState<ConsultaType | null>(null);
+  const [showPix, setShowPix] = useState<ConsultaType | null>(null);
+  const [filter, setFilter] = useState<FilterType>("todas");
 
   const totalFaturamento = consultas.filter(c => c.pagamento === "pago").reduce((acc, c) => acc + c.valor, 0);
   const pendentes = consultas.filter(c => c.status === "pendente").length;
   const confirmadas = consultas.filter(c => c.status === "confirmada").length;
 
-  const handleEnviarPix = (consulta: typeof consultas[0]) => {
+  const filteredConsultas = filter === "todas"
+    ? consultas
+    : filter === "confirmadas"
+    ? consultas.filter(c => c.status === "confirmada")
+    : consultas.filter(c => c.status === "pendente");
+
+  const handleEnviarPix = (consulta: ConsultaType) => {
     setShowPix(consulta);
-    toast.success("Cobrança PIX enviada para a paciente!");
   };
 
   const pixCode = "00020126580014br.gov.bcb.pix0136diagnelas-clinica@pix.com5204000053039865802BR5925CLINICA SAUDE DA MULHER6009SAO PAULO62070503***63041D3D";
@@ -75,33 +95,44 @@ const ClinicaPainel = () => {
       </div>
 
       <div className="px-6 -mt-4 space-y-4">
-        {/* Stats */}
+        {/* Stats - clickable */}
         <div className="grid grid-cols-3 gap-3">
           {[
-            { icon: Calendar, label: "Confirmadas", count: confirmadas, color: "gradient-primary" },
-            { icon: Clock, label: "Pendentes", count: pendentes, color: "bg-accent" },
-            { icon: DollarSign, label: "Faturado", count: `R$${totalFaturamento}`, color: "bg-secondary" },
+            { icon: Calendar, label: "Confirmadas", count: confirmadas, color: "gradient-primary", filterVal: "confirmadas" as FilterType },
+            { icon: Clock, label: "Pendentes", count: pendentes, color: "bg-accent", filterVal: "pendentes" as FilterType },
+            { icon: DollarSign, label: "Faturado", count: `R$${totalFaturamento}`, color: "bg-secondary", filterVal: "todas" as FilterType },
           ].map(s => (
-            <motion.div
+            <motion.button
               key={s.label}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-card rounded-2xl p-3 shadow-card border border-border text-center"
+              onClick={() => setFilter(f => f === s.filterVal ? "todas" : s.filterVal)}
+              className={`bg-card rounded-2xl p-3 shadow-card border text-center transition-all ${
+                filter === s.filterVal && s.filterVal !== "todas" ? "border-primary ring-2 ring-primary/20" : "border-border"
+              }`}
             >
               <div className={`w-10 h-10 rounded-full ${s.color} mx-auto flex items-center justify-center mb-2`}>
                 <s.icon className={`w-5 h-5 ${s.color.includes("gradient") ? "text-primary-foreground" : "text-secondary-foreground"}`} />
               </div>
               <p className="font-display font-bold text-lg text-foreground">{s.count}</p>
               <p className="text-[10px] text-muted-foreground font-display">{s.label}</p>
-            </motion.div>
+            </motion.button>
           ))}
         </div>
+
+        {/* Filter indicator */}
+        {filter !== "todas" && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground font-display">Filtrando: <span className="font-semibold text-foreground capitalize">{filter}</span></span>
+            <button onClick={() => setFilter("todas")} className="text-xs text-primary font-display font-semibold">Limpar</button>
+          </div>
+        )}
 
         {/* Consultas */}
         <div>
           <h2 className="font-display font-bold text-foreground mb-3">Consultas</h2>
           <div className="space-y-3">
-            {consultas.map((c, i) => (
+            {filteredConsultas.map((c, i) => (
               <motion.div
                 key={c.paciente}
                 initial={{ opacity: 0, y: 20 }}
@@ -154,6 +185,12 @@ const ClinicaPainel = () => {
                 </div>
               </motion.div>
             ))}
+
+            {filteredConsultas.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground text-sm font-display">
+                Nenhuma consulta {filter} encontrada.
+              </div>
+            )}
           </div>
         </div>
 
@@ -169,7 +206,7 @@ const ClinicaPainel = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-foreground/40 z-50 flex items-center justify-center p-6"
+            className="fixed inset-0 bg-foreground/40 z-50 flex items-center justify-center p-4"
             onClick={() => setSelectedConsulta(null)}
           >
             <motion.div
@@ -177,54 +214,51 @@ const ClinicaPainel = () => {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               onClick={e => e.stopPropagation()}
-              className="bg-card w-full max-w-sm rounded-3xl p-6 max-h-[85vh] overflow-y-auto"
+              className="bg-card w-full max-w-sm rounded-3xl p-5 max-h-[80vh] overflow-y-auto"
             >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-display font-bold text-foreground text-lg">Detalhes da Consulta</h3>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-display font-bold text-foreground text-base">Detalhes da Consulta</h3>
                 <button onClick={() => setSelectedConsulta(null)} className="text-muted-foreground">
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              <div className="space-y-4">
-                <div className="gradient-soft rounded-2xl p-4">
-                  <p className="font-display font-bold text-foreground">{selectedConsulta.paciente}</p>
-                  <p className="text-sm text-primary font-display font-semibold mt-0.5">{selectedConsulta.especialidade}</p>
+              <div className="space-y-3">
+                <div className="gradient-soft rounded-xl p-3">
+                  <p className="font-display font-bold text-foreground text-sm">{selectedConsulta.paciente}</p>
+                  <p className="text-xs text-primary font-display font-semibold mt-0.5">{selectedConsulta.especialidade}</p>
                 </div>
 
-                <div className="space-y-3 text-sm">
-                  <div className="flex justify-between"><span className="text-muted-foreground">Data/Hora</span><span className="font-display font-semibold text-foreground">{selectedConsulta.data}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">E-mail</span><span className="font-display font-semibold text-foreground">{selectedConsulta.email}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Telefone</span><span className="font-display font-semibold text-foreground">{selectedConsulta.telefone}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Valor</span><span className="font-display font-bold text-primary">R$ {selectedConsulta.valor},00</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Pagamento</span>
-                    <span className={`font-display font-semibold ${selectedConsulta.pagamento === "pago" ? "text-accent-foreground" : "text-destructive"}`}>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between"><span className="text-muted-foreground text-xs">Data/Hora</span><span className="font-display font-semibold text-foreground text-xs">{selectedConsulta.data}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground text-xs">E-mail</span><span className="font-display font-semibold text-foreground text-xs">{selectedConsulta.email}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground text-xs">Telefone</span><span className="font-display font-semibold text-foreground text-xs">{selectedConsulta.telefone}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground text-xs">Valor</span><span className="font-display font-bold text-primary text-xs">R$ {selectedConsulta.valor},00</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground text-xs">Pagamento</span>
+                    <span className={`font-display font-semibold text-xs ${selectedConsulta.pagamento === "pago" ? "text-accent-foreground" : "text-destructive"}`}>
                       {selectedConsulta.pagamento === "pago" ? "✓ Pago" : "Pendente"}
                     </span>
-                  </div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Relatório IA</span>
-                    <span className="font-display font-semibold text-foreground">{selectedConsulta.relatorio ? "Anexado" : "Não enviado"}</span>
                   </div>
                 </div>
 
                 {selectedConsulta.relatorio && (
-                  <button className="w-full flex items-center gap-3 bg-muted rounded-2xl p-4 text-left">
-                    <FileText className="w-5 h-5 text-primary" />
+                  <button className="w-full flex items-center gap-3 bg-muted rounded-xl p-3 text-left">
+                    <FileText className="w-4 h-4 text-primary" />
                     <div>
-                      <p className="font-display font-semibold text-foreground text-sm">Ver relatório da paciente</p>
-                      <p className="text-xs text-muted-foreground">Relatório de sintomas anexado</p>
+                      <p className="font-display font-semibold text-foreground text-xs">Ver relatório da paciente</p>
+                      <p className="text-[10px] text-muted-foreground">Relatório de sintomas anexado</p>
                     </div>
                   </button>
                 )}
 
-                <div className="flex gap-3 pt-2">
+                <div className="flex gap-2 pt-1">
                   {selectedConsulta.pagamento !== "pago" && (
-                    <Button variant="hero" size="lg" className="flex-1" onClick={() => { setSelectedConsulta(null); handleEnviarPix(selectedConsulta); }}>
-                      <QrCode className="w-4 h-4 mr-1" /> Cobrar PIX
+                    <Button variant="hero" size="sm" className="flex-1 text-xs py-2" onClick={() => { setSelectedConsulta(null); handleEnviarPix(selectedConsulta); }}>
+                      <QrCode className="w-3 h-3 mr-1" /> Cobrar PIX
                     </Button>
                   )}
-                  <Button variant="hero-outline" size="lg" className="flex-1" onClick={() => { setSelectedConsulta(null); navigate("/clinica/chat"); }}>
-                    <MessageSquare className="w-4 h-4 mr-1" /> Chat
+                  <Button variant="hero-outline" size="sm" className="flex-1 text-xs py-2" onClick={() => { setSelectedConsulta(null); navigate("/clinica/chat"); }}>
+                    <MessageSquare className="w-3 h-3 mr-1" /> Chat
                   </Button>
                 </div>
               </div>
@@ -240,7 +274,7 @@ const ClinicaPainel = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-foreground/40 z-50 flex items-center justify-center p-6"
+            className="fixed inset-0 bg-foreground/40 z-50 flex items-center justify-center p-4"
             onClick={() => setShowPix(null)}
           >
             <motion.div
@@ -248,45 +282,43 @@ const ClinicaPainel = () => {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               onClick={e => e.stopPropagation()}
-              className="bg-card w-full max-w-sm rounded-3xl p-6"
+              className="bg-card w-full max-w-sm rounded-3xl p-5 max-h-[80vh] overflow-y-auto"
             >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-display font-bold text-foreground text-lg">Cobrança PIX</h3>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-display font-bold text-foreground text-base">Cobrança PIX</h3>
                 <button onClick={() => setShowPix(null)} className="text-muted-foreground">
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              <div className="text-center space-y-4">
-                <p className="text-sm text-muted-foreground">Cobrança para <span className="font-semibold text-foreground">{showPix.paciente}</span></p>
-                <p className="text-3xl font-display font-bold text-primary">R$ {showPix.valor},00</p>
+              <div className="text-center space-y-3">
+                <p className="text-xs text-muted-foreground">Cobrança para <span className="font-semibold text-foreground">{showPix.paciente}</span></p>
+                <p className="text-2xl font-display font-bold text-primary">R$ {showPix.valor},00</p>
 
-                {/* QR Code placeholder */}
-                <div className="w-48 h-48 mx-auto bg-muted rounded-2xl flex items-center justify-center border-2 border-dashed border-border">
+                <div className="w-36 h-36 mx-auto bg-muted rounded-xl flex items-center justify-center border-2 border-dashed border-border">
                   <div className="text-center">
-                    <QrCode className="w-16 h-16 text-foreground mx-auto mb-2" />
-                    <p className="text-xs text-muted-foreground">QR Code PIX</p>
+                    <QrCode className="w-12 h-12 text-foreground mx-auto mb-1" />
+                    <p className="text-[10px] text-muted-foreground">QR Code PIX</p>
                   </div>
                 </div>
 
-                {/* PIX code */}
-                <div className="bg-muted rounded-xl p-3">
+                <div className="bg-muted rounded-lg p-2">
                   <p className="text-[10px] text-muted-foreground mb-1 font-display">Código PIX copia e cola</p>
-                  <p className="text-xs text-foreground font-mono break-all">{pixCode.slice(0, 60)}...</p>
+                  <p className="text-[10px] text-foreground font-mono break-all">{pixCode.slice(0, 50)}...</p>
                 </div>
 
-                <div className="flex gap-3">
-                  <Button variant="hero" size="lg" className="flex-1" onClick={() => {
+                <div className="flex gap-2">
+                  <Button variant="hero" size="sm" className="flex-1 text-xs py-2" onClick={() => {
                     navigator.clipboard.writeText(pixCode);
                     toast.success("Código PIX copiado!");
                   }}>
-                    <Copy className="w-4 h-4 mr-1" /> Copiar código
+                    <Copy className="w-3 h-3 mr-1" /> Copiar
                   </Button>
-                  <Button variant="hero-outline" size="lg" className="flex-1" onClick={() => {
-                    toast.success("Cobrança enviada para a paciente!");
+                  <Button variant="hero-outline" size="sm" className="flex-1 text-xs py-2" onClick={() => {
+                    toast.success("Cobrança PIX enviada para a paciente!");
                     setShowPix(null);
                   }}>
-                    Enviar
+                    Enviar cobrança
                   </Button>
                 </div>
               </div>
