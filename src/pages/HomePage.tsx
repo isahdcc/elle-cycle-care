@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Bell, Calendar, ChevronRight, Plus, X, Clock, MapPin, FileText, Eye, PenSquare, ChevronLeft } from "lucide-react";
+import { Bell, Calendar, ChevronRight, Plus, X, Clock, MapPin, FileText, Eye, PenSquare, ChevronLeft, QrCode, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import BottomNav from "@/components/BottomNav";
 import logo from "@/assets/logo-diagnelas.png";
+import { toast } from "sonner";
 
 const daysOfWeek = ["D", "S", "T", "Q", "Q", "S", "S"];
 
@@ -18,6 +19,8 @@ const consultas = [
     medico: "Dra. Camila Souza",
     especialidade: "Endometriose",
     observacao: "Levar ultrassom recente e relatório de sintomas.",
+    valor: 350,
+    pixPendente: true,
   },
   {
     id: 2,
@@ -28,29 +31,23 @@ const consultas = [
     medico: "Dr. Rafael Lima",
     especialidade: "Ginecologia",
     observacao: "Retorno para avaliação de exames.",
+    valor: 280,
+    pixPendente: false,
   },
 ];
 
 const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
 const getMenstrualDays = (month: number) => {
-  // Mock: menstrual days vary by month
   const patterns: Record<number, number[]> = {
-    0: [1, 2, 3, 4, 5],
-    1: [3, 4, 5, 6, 7],
-    2: [1, 2, 3, 4, 5],
-    3: [5, 6, 7, 8, 9],
-    4: [2, 3, 4, 5, 6],
-    5: [1, 2, 3, 4, 5],
-    6: [4, 5, 6, 7, 8],
-    7: [1, 2, 3, 4, 5],
-    8: [3, 4, 5, 6, 7],
-    9: [1, 2, 3, 4, 5],
-    10: [5, 6, 7, 8, 9],
-    11: [2, 3, 4, 5, 6],
+    0: [1, 2, 3, 4, 5], 1: [3, 4, 5, 6, 7], 2: [1, 2, 3, 4, 5], 3: [5, 6, 7, 8, 9],
+    4: [2, 3, 4, 5, 6], 5: [1, 2, 3, 4, 5], 6: [4, 5, 6, 7, 8], 7: [1, 2, 3, 4, 5],
+    8: [3, 4, 5, 6, 7], 9: [1, 2, 3, 4, 5], 10: [5, 6, 7, 8, 9], 11: [2, 3, 4, 5, 6],
   };
   return patterns[month] || [1, 2, 3, 4, 5];
 };
+
+const pixCode = "00020126580014br.gov.bcb.pix0136diagnelas-clinica@pix.com5204000053039865802BR5925CLINICA SAUDE DA MULHER6009SAO PAULO62070503***63041D3D";
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -59,6 +56,7 @@ const HomePage = () => {
 
   const [selectedConsulta, setSelectedConsulta] = useState<typeof consultas[0] | null>(null);
   const [selectedDay, setSelectedDay] = useState<{ day: number; month: number; year: number } | null>(null);
+  const [showPixPayment, setShowPixPayment] = useState<typeof consultas[0] | null>(null);
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
 
@@ -188,6 +186,11 @@ const HomePage = () => {
                 <div>
                   <p className="font-display font-semibold text-foreground text-sm">{c.titulo}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">{c.clinica}</p>
+                  {c.pixPendente && (
+                    <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-display font-semibold text-destructive bg-destructive/10 px-2 py-0.5 rounded-full">
+                      <QrCode className="w-3 h-3" /> PIX pendente
+                    </span>
+                  )}
                 </div>
                 <ChevronRight className="w-5 h-5 text-primary shrink-0" />
               </button>
@@ -218,38 +221,38 @@ const HomePage = () => {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               onClick={e => e.stopPropagation()}
-              className="bg-card w-full max-w-sm rounded-3xl p-6"
+              className="bg-card w-full max-w-sm rounded-3xl p-5"
             >
-              <div className="w-10 h-1 bg-muted rounded-full mx-auto mb-4" />
-              <h3 className="font-display font-bold text-foreground text-lg mb-1">
+              <div className="w-10 h-1 bg-muted rounded-full mx-auto mb-3" />
+              <h3 className="font-display font-bold text-foreground text-base mb-1">
                 {selectedDay.day} de {monthNames[selectedDay.month]}
               </h3>
-              <p className="text-sm text-muted-foreground mb-5">O que deseja fazer?</p>
+              <p className="text-xs text-muted-foreground mb-4">O que deseja fazer?</p>
 
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <button
                   onClick={() => { setSelectedDay(null); navigate("/relatorio"); }}
-                  className="w-full flex items-center gap-3 bg-muted rounded-2xl p-4 hover:shadow-card transition-shadow text-left"
+                  className="w-full flex items-center gap-3 bg-muted rounded-xl p-3 hover:shadow-card transition-shadow text-left"
                 >
-                  <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
-                    <Eye className="w-5 h-5 text-secondary-foreground" />
+                  <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center">
+                    <Eye className="w-4 h-4 text-secondary-foreground" />
                   </div>
                   <div>
-                    <p className="font-display font-semibold text-foreground text-sm">Ver detalhes do dia</p>
-                    <p className="text-xs text-muted-foreground">Sintomas registrados e informações</p>
+                    <p className="font-display font-semibold text-foreground text-xs">Ver detalhes do dia</p>
+                    <p className="text-[10px] text-muted-foreground">Sintomas registrados</p>
                   </div>
                 </button>
 
                 <button
                   onClick={() => { setSelectedDay(null); navigate("/registrar"); }}
-                  className="w-full flex items-center gap-3 gradient-soft rounded-2xl p-4 hover:shadow-card transition-shadow text-left"
+                  className="w-full flex items-center gap-3 gradient-soft rounded-xl p-3 hover:shadow-card transition-shadow text-left"
                 >
-                  <div className="w-10 h-10 rounded-full gradient-primary flex items-center justify-center">
-                    <PenSquare className="w-5 h-5 text-primary-foreground" />
+                  <div className="w-9 h-9 rounded-full gradient-primary flex items-center justify-center">
+                    <PenSquare className="w-4 h-4 text-primary-foreground" />
                   </div>
                   <div>
-                    <p className="font-display font-semibold text-foreground text-sm">Registrar sintomas</p>
-                    <p className="text-xs text-muted-foreground">Adicionar registro para este dia</p>
+                    <p className="font-display font-semibold text-foreground text-xs">Registrar sintomas</p>
+                    <p className="text-[10px] text-muted-foreground">Adicionar registro</p>
                   </div>
                 </button>
               </div>
@@ -265,7 +268,7 @@ const HomePage = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-foreground/40 z-50 flex items-center justify-center p-6"
+            className="fixed inset-0 bg-foreground/40 z-50 flex items-center justify-center p-4"
             onClick={() => setSelectedConsulta(null)}
           >
             <motion.div
@@ -273,47 +276,129 @@ const HomePage = () => {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               onClick={e => e.stopPropagation()}
-              className="bg-card w-full max-w-sm rounded-3xl p-6 max-h-[85vh] overflow-y-auto"
+              className="bg-card w-full max-w-sm rounded-3xl p-5 max-h-[80vh] overflow-y-auto"
             >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-display font-bold text-foreground text-lg">Detalhes da Consulta</h3>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-display font-bold text-foreground text-base">Detalhes da Consulta</h3>
                 <button onClick={() => setSelectedConsulta(null)} className="text-muted-foreground">
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              <div className="space-y-4">
-                <div className="gradient-soft rounded-2xl p-4">
-                  <p className="font-display font-bold text-foreground">{selectedConsulta.titulo}</p>
-                  <p className="text-sm text-primary font-display font-semibold mt-0.5">{selectedConsulta.especialidade}</p>
+              <div className="space-y-3">
+                <div className="gradient-soft rounded-xl p-3">
+                  <p className="font-display font-bold text-foreground text-sm">{selectedConsulta.titulo}</p>
+                  <p className="text-xs text-primary font-display font-semibold mt-0.5">{selectedConsulta.especialidade}</p>
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {[
                     { icon: MapPin, label: selectedConsulta.clinica, sub: selectedConsulta.endereco },
                     { icon: Clock, label: `Horário: ${selectedConsulta.horario}`, sub: selectedConsulta.medico },
                     { icon: FileText, label: "Observações", sub: selectedConsulta.observacao },
                   ].map((item, i) => (
-                    <div key={i} className="flex items-start gap-3">
-                      <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center shrink-0 mt-0.5">
-                        <item.icon className="w-4 h-4 text-secondary-foreground" />
+                    <div key={i} className="flex items-start gap-2">
+                      <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center shrink-0 mt-0.5">
+                        <item.icon className="w-3.5 h-3.5 text-secondary-foreground" />
                       </div>
                       <div>
-                        <p className="font-display font-semibold text-foreground text-sm">{item.label}</p>
-                        <p className="text-xs text-muted-foreground">{item.sub}</p>
+                        <p className="font-display font-semibold text-foreground text-xs">{item.label}</p>
+                        <p className="text-[10px] text-muted-foreground">{item.sub}</p>
                       </div>
                     </div>
                   ))}
                 </div>
 
-                <div className="flex gap-3 pt-2">
-                  <Button variant="hero" size="lg" className="flex-1" onClick={() => { setSelectedConsulta(null); navigate("/chat"); }}>
+                {/* PIX pending indicator */}
+                {selectedConsulta.pixPendente && (
+                  <button
+                    onClick={() => { setSelectedConsulta(null); setShowPixPayment(selectedConsulta); }}
+                    className="w-full flex items-center gap-3 bg-destructive/5 border border-destructive/20 rounded-xl p-3 text-left"
+                  >
+                    <QrCode className="w-5 h-5 text-destructive" />
+                    <div>
+                      <p className="font-display font-semibold text-destructive text-xs">Pagamento PIX pendente</p>
+                      <p className="text-[10px] text-muted-foreground">R$ {selectedConsulta.valor},00 — Toque para pagar</p>
+                    </div>
+                  </button>
+                )}
+
+                <div className="flex gap-2 pt-1">
+                  <Button variant="hero" size="sm" className="flex-1 text-xs py-2" onClick={() => { setSelectedConsulta(null); navigate("/chat"); }}>
                     Chat com clínica
                   </Button>
-                  <Button variant="hero-outline" size="lg" className="flex-1" onClick={() => { setSelectedConsulta(null); navigate("/agendamento"); }}>
+                  <Button variant="hero-outline" size="sm" className="flex-1 text-xs py-2" onClick={() => { setSelectedConsulta(null); navigate("/agendamento"); }}>
                     Reagendar
                   </Button>
                 </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* PIX Payment Modal (User side) */}
+      <AnimatePresence>
+        {showPixPayment && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-foreground/40 z-50 flex items-center justify-center p-4"
+            onClick={() => setShowPixPayment(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              onClick={e => e.stopPropagation()}
+              className="bg-card w-full max-w-sm rounded-3xl p-5 max-h-[80vh] overflow-y-auto"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-display font-bold text-foreground text-base">Pagamento PIX</h3>
+                <button onClick={() => setShowPixPayment(null)} className="text-muted-foreground">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="text-center space-y-3">
+                <div className="gradient-soft rounded-xl p-3">
+                  <p className="text-xs text-muted-foreground">{showPixPayment.clinica}</p>
+                  <p className="font-display font-bold text-foreground text-sm">{showPixPayment.titulo}</p>
+                </div>
+
+                <p className="text-2xl font-display font-bold text-primary">R$ {showPixPayment.valor},00</p>
+
+                <div className="w-36 h-36 mx-auto bg-muted rounded-xl flex items-center justify-center border-2 border-dashed border-border">
+                  <div className="text-center">
+                    <QrCode className="w-12 h-12 text-foreground mx-auto mb-1" />
+                    <p className="text-[10px] text-muted-foreground">Escaneie com seu banco</p>
+                  </div>
+                </div>
+
+                <div className="bg-muted rounded-lg p-2">
+                  <p className="text-[10px] text-muted-foreground mb-1 font-display">Código PIX copia e cola</p>
+                  <p className="text-[10px] text-foreground font-mono break-all">{pixCode.slice(0, 50)}...</p>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button variant="hero-outline" size="sm" className="flex-1 text-xs py-2" onClick={() => {
+                    navigator.clipboard.writeText(pixCode);
+                    toast.success("Código PIX copiado!");
+                  }}>
+                    <Copy className="w-3 h-3 mr-1" /> Copiar código
+                  </Button>
+                  <Button variant="hero" size="sm" className="flex-1 text-xs py-2" onClick={() => {
+                    toast.success("Pagamento confirmado!");
+                    setShowPixPayment(null);
+                  }}>
+                    <Check className="w-3 h-3 mr-1" /> Já paguei
+                  </Button>
+                </div>
+
+                <p className="text-[10px] text-muted-foreground">
+                  Após o pagamento, a clínica será notificada automaticamente.
+                </p>
               </div>
             </motion.div>
           </motion.div>

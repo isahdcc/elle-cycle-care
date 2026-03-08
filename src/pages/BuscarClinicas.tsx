@@ -170,7 +170,7 @@ const BuscarClinicas = () => {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               onClick={e => e.stopPropagation()}
-              className="bg-card w-full max-w-sm rounded-3xl p-6 max-h-[85vh] overflow-y-auto"
+              className="bg-card w-full max-w-sm rounded-3xl p-5 max-h-[80vh] overflow-y-auto"
             >
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-display font-bold text-foreground text-lg">{selectedClinica.nome}</h3>
@@ -236,21 +236,21 @@ const BuscarClinicas = () => {
                 </div>
 
                 {/* Map placeholder */}
-                <div className="bg-muted rounded-2xl h-32 flex items-center justify-center overflow-hidden relative">
+                <div className="bg-muted rounded-xl h-24 flex items-center justify-center overflow-hidden relative">
                   <div className="absolute inset-0 bg-gradient-to-b from-muted/50 to-muted" />
                   <div className="relative z-10 text-center">
-                    <MapPin className="w-8 h-8 text-primary mx-auto mb-1" />
-                    <p className="text-xs text-muted-foreground font-display">Ver no mapa</p>
+                    <MapPin className="w-6 h-6 text-primary mx-auto mb-1" />
+                    <p className="text-[10px] text-muted-foreground font-display">Ver no mapa</p>
                   </div>
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-3 pt-1">
-                  <Button variant="hero" size="lg" className="flex-1" onClick={() => { setSelectedClinica(null); navigate("/agendamento"); }}>
+                <div className="flex gap-2 pt-1">
+                  <Button variant="hero" size="sm" className="flex-1 text-xs py-2" onClick={() => { setSelectedClinica(null); navigate("/agendamento"); }}>
                     Solicitar consulta
                   </Button>
-                  <Button variant="hero-outline" size="lg" className="flex-1" onClick={() => { setSelectedClinica(null); navigate("/chat"); }}>
-                    <MessageSquare className="w-4 h-4 mr-1" /> Chat
+                  <Button variant="hero-outline" size="sm" className="flex-1 text-xs py-2" onClick={() => { setSelectedClinica(null); navigate("/chat"); }}>
+                    <MessageSquare className="w-3 h-3 mr-1" /> Chat
                   </Button>
                 </div>
               </div>
