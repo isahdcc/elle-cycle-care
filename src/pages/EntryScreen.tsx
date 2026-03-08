@@ -10,6 +10,15 @@ const EntryScreen = () => {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [showPass, setShowPass] = useState(false);
+  const [loginType, setLoginType] = useState<"usuario" | "clinica">("usuario");
+
+  const handleLogin = () => {
+    if (loginType === "usuario") {
+      navigate("/home");
+    } else {
+      navigate("/clinica/painel");
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-background px-6 pt-10 pb-8">
@@ -29,7 +38,31 @@ const EntryScreen = () => {
         className="w-full max-w-sm"
       >
         <h1 className="font-display text-2xl font-bold text-foreground text-center">Bem-vinda de volta</h1>
-        <p className="text-muted-foreground text-sm text-center mt-1 mb-8">Entre para continuar</p>
+        <p className="text-muted-foreground text-sm text-center mt-1 mb-6">Entre para continuar</p>
+
+        {/* Login type selector */}
+        <div className="flex bg-muted rounded-2xl p-1 mb-6">
+          <button
+            onClick={() => setLoginType("usuario")}
+            className={`flex-1 py-3 rounded-xl text-sm font-display font-semibold transition-all ${
+              loginType === "usuario"
+                ? "gradient-primary text-primary-foreground shadow-card"
+                : "text-muted-foreground"
+            }`}
+          >
+            Usuária
+          </button>
+          <button
+            onClick={() => setLoginType("clinica")}
+            className={`flex-1 py-3 rounded-xl text-sm font-display font-semibold transition-all ${
+              loginType === "clinica"
+                ? "gradient-primary text-primary-foreground shadow-card"
+                : "text-muted-foreground"
+            }`}
+          >
+            Clínica
+          </button>
+        </div>
 
         {/* Email */}
         <div className="relative mb-4">
@@ -66,8 +99,8 @@ const EntryScreen = () => {
         </div>
 
         {/* Entrar */}
-        <Button variant="hero" size="lg" className="w-full rounded-2xl py-6" onClick={() => navigate("/home")}>
-          Entrar
+        <Button variant="hero" size="lg" className="w-full rounded-2xl py-6" onClick={handleLogin}>
+          {loginType === "usuario" ? "Entrar como Usuária" : "Entrar como Clínica"}
         </Button>
 
         {/* Divider */}

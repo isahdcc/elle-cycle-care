@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Download, Send, FileText, Calendar, TrendingUp, AlertTriangle, Activity, Brain, ChevronDown } from "lucide-react";
+import { ArrowLeft, Download, Send, FileText, Calendar, TrendingUp, AlertTriangle, Activity, Brain, ChevronDown, Eye, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import BottomNav from "@/components/BottomNav";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from "recharts";
+import { toast } from "sonner";
 
 const periodos = [
   { label: "Última semana", value: "week", gerado: "07/03/2026", periodo: "01 Mar — 07 Mar 2026 (7 dias, 6 registros)" },
@@ -68,12 +69,122 @@ const cicloHistorico = [
   { mes: "Mar", duracao: 29, intensidade: 9 },
 ];
 
+const recomendacoes = [
+  { urgente: true, text: "Procurar especialista em endometriose para avaliação detalhada" },
+  { urgente: true, text: "Realizar ultrassom transvaginal com preparo intestinal" },
+  { urgente: false, text: "Monitorar padrão de dor fora do período menstrual" },
+  { urgente: false, text: "Avaliar dosagem hormonal (FSH, LH, estradiol, progesterona)" },
+];
+
 const Relatorio = () => {
   const navigate = useNavigate();
   const [periodoSelecionado, setPeriodoSelecionado] = useState("3months");
   const [showPeriodos, setShowPeriodos] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const reportRef = useRef<HTMLDivElement>(null);
 
   const periodoAtual = periodos.find(p => p.value === periodoSelecionado)!;
+
+  const handleDownloadPDF = async () => {
+    toast.loading("Gerando PDF...");
+    try {
+      const { default: jsPDF } = await import("jspdf");
+      const doc = new jsPDF();
+      const margin = 20;
+      let y = margin;
+
+      // Title
+      doc.setFontSize(20);
+      doc.setTextColor(180, 40, 100);
+      doc.text("DiagnELAs — Relatório de Saúde", margin, y);
+      y += 10;
+
+      doc.setFontSize(10);
+      doc.setTextColor(120, 120, 120);
+      doc.text(`Gerado em ${periodoAtual.gerado} | ${periodoAtual.periodo}`, margin, y);
+      y += 15;
+
+      // Sintomas mais frequentes
+      doc.setFontSize(14);
+      doc.setTextColor(60, 60, 60);
+      doc.text("Sintomas mais frequentes", margin, y);
+      y += 8;
+      doc.setFontSize(10);
+      sintomasFrequentes.forEach(s => {
+        doc.setTextColor(80, 80, 80);
+        doc.text(`• ${s.label}: ${s.pct}%`, margin + 4, y);
+        y += 6;
+      });
+      y += 8;
+
+      // Padrões detectados
+      doc.setFontSize(14);
+      doc.setTextColor(60, 60, 60);
+      doc.text("Padrões detectados", margin, y);
+      y += 8;
+      doc.setFontSize(10);
+      padroes.forEach(p => {
+        doc.setTextColor(80, 80, 80);
+        const lines = doc.splitTextToSize(`• ${p}`, 170);
+        doc.text(lines, margin + 4, y);
+        y += lines.length * 6;
+      });
+      y += 8;
+
+      // Condições sugeridas
+      doc.setFontSize(14);
+      doc.setTextColor(60, 60, 60);
+      doc.text("Possíveis condições sugeridas", margin, y);
+      y += 8;
+      doc.setFontSize(10);
+      condicoes.forEach(c => {
+        doc.setTextColor(80, 80, 80);
+        doc.text(`• ${c.nome}: ${c.correlacao}% de correlação`, margin + 4, y);
+        y += 6;
+      });
+      y += 8;
+
+      // Recomendações
+      doc.setFontSize(14);
+      doc.setTextColor(60, 60, 60);
+      doc.text("Recomendações", margin, y);
+      y += 8;
+      doc.setFontSize(10);
+      recomendacoes.forEach(r => {
+        doc.setTextColor(80, 80, 80);
+        const prefix = r.urgente ? "⚠️ " : "• ";
+        const lines = doc.splitTextToSize(`${prefix}${r.text}`, 170);
+        doc.text(lines, margin + 4, y);
+        y += lines.length * 6;
+      });
+      y += 8;
+
+      // Ciclo histórico
+      doc.setFontSize(14);
+      doc.setTextColor(60, 60, 60);
+      doc.text("Histórico de ciclos", margin, y);
+      y += 8;
+      doc.setFontSize(10);
+      cicloHistorico.forEach(c => {
+        doc.setTextColor(80, 80, 80);
+        doc.text(`${c.mes}: Duração ${c.duracao} dias, Intensidade ${c.intensidade}/10`, margin + 4, y);
+        y += 6;
+      });
+      y += 10;
+
+      // Disclaimer
+      doc.setFontSize(9);
+      doc.setTextColor(150, 150, 150);
+      doc.text("Este relatório não substitui diagnóstico médico. Consulte um especialista.", margin, y);
+
+      doc.save(`DiagnELAs_Relatorio_${periodoAtual.gerado.replace(/\//g, "-")}.pdf`);
+      toast.dismiss();
+      toast.success("PDF baixado com sucesso!");
+    } catch {
+      toast.dismiss();
+      toast.error("Erro ao gerar PDF");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -86,7 +197,7 @@ const Relatorio = () => {
         </div>
       </div>
 
-      <div className="px-6 mt-4 space-y-4">
+      <div className="px-6 mt-4 space-y-4" ref={reportRef}>
         {/* Period Selector */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl shadow-card border border-border overflow-hidden">
           <button
@@ -123,6 +234,46 @@ const Relatorio = () => {
             </motion.div>
           )}
         </motion.div>
+
+        {/* Quick Actions */}
+        <div className="flex gap-3">
+          <Button variant="hero" size="lg" className="flex-1" onClick={handleDownloadPDF}>
+            <Download className="w-4 h-4 mr-1" /> Baixar PDF
+          </Button>
+          <Button variant="hero-outline" size="lg" className="flex-1" onClick={() => setShowPreview(!showPreview)}>
+            <Eye className="w-4 h-4 mr-1" /> Visualizar
+          </Button>
+        </div>
+
+        {/* Preview mode */}
+        {showPreview && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl p-5 shadow-card border border-primary/30">
+            <div className="flex items-center gap-2 mb-3">
+              <FileText className="w-5 h-5 text-primary" />
+              <h3 className="font-display font-bold text-foreground">Prévia do relatório</h3>
+            </div>
+            <div className="bg-muted rounded-xl p-4 text-xs text-muted-foreground space-y-2 font-mono">
+              <p className="font-bold text-foreground text-sm font-display">DiagnELAs — Relatório de Saúde</p>
+              <p>Gerado: {periodoAtual.gerado}</p>
+              <p>Período: {periodoAtual.periodo}</p>
+              <hr className="border-border my-2" />
+              <p className="font-bold text-foreground font-display">Sintomas frequentes:</p>
+              {sintomasFrequentes.slice(0, 5).map(s => (
+                <p key={s.label}>• {s.label} — {s.pct}%</p>
+              ))}
+              <hr className="border-border my-2" />
+              <p className="font-bold text-foreground font-display">Condições sugeridas:</p>
+              {condicoes.map(c => (
+                <p key={c.nome}>• {c.nome} — {c.correlacao}%</p>
+              ))}
+              <hr className="border-border my-2" />
+              <p className="italic">⚠️ Não substitui diagnóstico médico.</p>
+            </div>
+            <Button variant="hero" size="lg" className="w-full mt-3" onClick={handleDownloadPDF}>
+              <Download className="w-4 h-4 mr-1" /> Baixar este relatório
+            </Button>
+          </motion.div>
+        )}
 
         {/* Header Card */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="bg-card rounded-2xl p-5 shadow-card border border-border">
@@ -198,15 +349,13 @@ const Relatorio = () => {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-card rounded-2xl p-5 shadow-card border border-border">
           <h3 className="font-display font-bold text-foreground mb-4">Distribuição por categoria</h3>
           <div className="flex items-center gap-4">
-            <ResponsiveContainer width={140} height={140}>
-              <PieChart>
-                <Pie data={distribuicaoSintomas} dataKey="value" cx="50%" cy="50%" innerRadius={35} outerRadius={60} paddingAngle={3}>
-                  {distribuicaoSintomas.map((entry, i) => (
-                    <Cell key={i} fill={entry.color} />
-                  ))}
-                </Pie>
-              </PieChart>
-            </ResponsiveContainer>
+            <PieChart width={140} height={140}>
+              <Pie data={distribuicaoSintomas} dataKey="value" cx="50%" cy="50%" innerRadius={35} outerRadius={60} paddingAngle={3}>
+                {distribuicaoSintomas.map((entry, i) => (
+                  <Cell key={i} fill={entry.color} />
+                ))}
+              </Pie>
+            </PieChart>
             <div className="space-y-2 flex-1">
               {distribuicaoSintomas.map(d => (
                 <div key={d.name} className="flex items-center gap-2 text-xs">
@@ -284,22 +433,12 @@ const Relatorio = () => {
             <h3 className="font-display font-bold text-foreground">Recomendações</h3>
           </div>
           <ul className="space-y-2">
-            <li className="flex items-start gap-2 text-sm text-muted-foreground">
-              <span className="w-1.5 h-1.5 rounded-full bg-destructive mt-1.5 shrink-0" />
-              Procurar especialista em endometriose para avaliação detalhada
-            </li>
-            <li className="flex items-start gap-2 text-sm text-muted-foreground">
-              <span className="w-1.5 h-1.5 rounded-full bg-destructive mt-1.5 shrink-0" />
-              Realizar ultrassom transvaginal com preparo intestinal
-            </li>
-            <li className="flex items-start gap-2 text-sm text-muted-foreground">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
-              Monitorar padrão de dor fora do período menstrual
-            </li>
-            <li className="flex items-start gap-2 text-sm text-muted-foreground">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
-              Avaliar dosagem hormonal (FSH, LH, estradiol, progesterona)
-            </li>
+            {recomendacoes.map((r, i) => (
+              <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                <span className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${r.urgente ? "bg-destructive" : "bg-primary"}`} />
+                {r.text}
+              </li>
+            ))}
           </ul>
         </motion.div>
 
@@ -310,9 +449,9 @@ const Relatorio = () => {
           </p>
         </div>
 
-        {/* Actions */}
+        {/* Bottom Actions */}
         <div className="flex gap-3">
-          <Button variant="hero" size="lg" className="flex-1">
+          <Button variant="hero" size="lg" className="flex-1" onClick={handleDownloadPDF}>
             <Download className="w-4 h-4 mr-1" /> Baixar PDF
           </Button>
           <Button variant="hero-outline" size="lg" className="flex-1" onClick={() => navigate("/clinicas")}>

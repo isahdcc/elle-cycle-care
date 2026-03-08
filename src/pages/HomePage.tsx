@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Bell, Calendar, ChevronRight, Plus, X, Clock, MapPin, FileText, Eye, PenSquare } from "lucide-react";
+import { Bell, Calendar, ChevronRight, Plus, X, Clock, MapPin, FileText, Eye, PenSquare, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import BottomNav from "@/components/BottomNav";
 import logo from "@/assets/logo-diagnelas.png";
@@ -31,24 +31,63 @@ const consultas = [
   },
 ];
 
+const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+
+const getMenstrualDays = (month: number) => {
+  // Mock: menstrual days vary by month
+  const patterns: Record<number, number[]> = {
+    0: [1, 2, 3, 4, 5],
+    1: [3, 4, 5, 6, 7],
+    2: [1, 2, 3, 4, 5],
+    3: [5, 6, 7, 8, 9],
+    4: [2, 3, 4, 5, 6],
+    5: [1, 2, 3, 4, 5],
+    6: [4, 5, 6, 7, 8],
+    7: [1, 2, 3, 4, 5],
+    8: [3, 4, 5, 6, 7],
+    9: [1, 2, 3, 4, 5],
+    10: [5, 6, 7, 8, 9],
+    11: [2, 3, 4, 5, 6],
+  };
+  return patterns[month] || [1, 2, 3, 4, 5];
+};
+
 const HomePage = () => {
   const navigate = useNavigate();
   const today = new Date();
   const cycleDay = 3;
 
   const [selectedConsulta, setSelectedConsulta] = useState<typeof consultas[0] | null>(null);
-  const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const [selectedDay, setSelectedDay] = useState<{ day: number; month: number; year: number } | null>(null);
+  const [currentMonth, setCurrentMonth] = useState(today.getMonth());
+  const [currentYear, setCurrentYear] = useState(today.getFullYear());
 
-  const calendarDays = Array.from({ length: 31 }, (_, i) => ({
+  const getDaysInMonth = (month: number, year: number) => new Date(year, month + 1, 0).getDate();
+  const getFirstDayOfMonth = (month: number, year: number) => new Date(year, month, 1).getDay();
+
+  const prevMonth = () => {
+    if (currentMonth === 0) { setCurrentMonth(11); setCurrentYear(y => y - 1); }
+    else setCurrentMonth(m => m - 1);
+  };
+  const nextMonth = () => {
+    if (currentMonth === 11) { setCurrentMonth(0); setCurrentYear(y => y + 1); }
+    else setCurrentMonth(m => m + 1);
+  };
+
+  const daysInMonth = getDaysInMonth(currentMonth, currentYear);
+  const firstDay = getFirstDayOfMonth(currentMonth, currentYear);
+  const menstrualDays = getMenstrualDays(currentMonth);
+  const symptomDays = [8, 15];
+  const predictedDays = [26, 27, 28, 29, 30];
+
+  const calendarDays = Array.from({ length: daysInMonth }, (_, i) => ({
     day: i + 1,
-    menstrual: i < 5,
-    symptom: i === 7 || i === 14,
-    predicted: i >= 25 && i <= 29,
+    menstrual: menstrualDays.includes(i + 1),
+    symptom: symptomDays.includes(i + 1),
+    predicted: predictedDays.includes(i + 1),
   }));
 
-  const handleDayClick = (day: number) => {
-    setSelectedDay(day);
-  };
+  const isToday = (day: number) => day === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear();
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -60,6 +99,7 @@ const HomePage = () => {
             <h1 className="font-display text-xl font-bold text-primary-foreground">DiagnELAs</h1>
           </div>
           <button
+            onClick={() => navigate("/notificacoes")}
             className="w-10 h-10 rounded-full bg-primary-foreground/20 flex items-center justify-center relative"
           >
             <Bell className="w-5 h-5 text-primary-foreground" />
@@ -85,20 +125,30 @@ const HomePage = () => {
           transition={{ delay: 0.1 }}
           className="bg-card rounded-2xl p-4 shadow-card border border-border relative"
         >
-          <h3 className="font-display font-bold text-foreground mb-3">Calendário do ciclo</h3>
+          <div className="flex items-center justify-between mb-3">
+            <button onClick={prevMonth} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+              <ChevronLeft className="w-4 h-4 text-foreground" />
+            </button>
+            <h3 className="font-display font-bold text-foreground">
+              {monthNames[currentMonth]} {currentYear}
+            </h3>
+            <button onClick={nextMonth} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+              <ChevronRight className="w-4 h-4 text-foreground" />
+            </button>
+          </div>
           <div className="grid grid-cols-7 gap-1 text-center mb-2">
             {daysOfWeek.map((d, i) => (
               <span key={i} className="text-[10px] font-display text-muted-foreground font-semibold">{d}</span>
             ))}
           </div>
           <div className="grid grid-cols-7 gap-1">
-            {[0, 0, 0].map((_, i) => <div key={`e${i}`} />)}
+            {Array.from({ length: firstDay }).map((_, i) => <div key={`e${i}`} />)}
             {calendarDays.map(d => (
               <button
                 key={d.day}
-                onClick={() => handleDayClick(d.day)}
+                onClick={() => setSelectedDay({ day: d.day, month: currentMonth, year: currentYear })}
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium mx-auto transition-all hover:ring-2 hover:ring-primary/30 ${
-                  d.day === today.getDate()
+                  isToday(d.day)
                     ? "gradient-primary text-primary-foreground font-bold"
                     : d.menstrual
                     ? "bg-primary/20 text-primary"
@@ -172,7 +222,7 @@ const HomePage = () => {
             >
               <div className="w-10 h-1 bg-muted rounded-full mx-auto mb-4" />
               <h3 className="font-display font-bold text-foreground text-lg mb-1">
-                Dia {selectedDay}
+                {selectedDay.day} de {monthNames[selectedDay.month]}
               </h3>
               <p className="text-sm text-muted-foreground mb-5">O que deseja fazer?</p>
 
@@ -215,15 +265,15 @@ const HomePage = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-foreground/40 z-50 flex items-end justify-center"
+            className="fixed inset-0 bg-foreground/40 z-50 flex items-center justify-center p-6"
             onClick={() => setSelectedConsulta(null)}
           >
             <motion.div
-              initial={{ y: 300 }}
-              animate={{ y: 0 }}
-              exit={{ y: 300 }}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
               onClick={e => e.stopPropagation()}
-              className="bg-card w-full max-w-md rounded-t-3xl p-6 pb-8"
+              className="bg-card w-full max-w-sm rounded-3xl p-6 max-h-[85vh] overflow-y-auto"
             >
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-display font-bold text-foreground text-lg">Detalhes da Consulta</h3>
