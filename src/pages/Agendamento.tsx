@@ -14,8 +14,8 @@ const Agendamento = () => {
   const [hora, setHora] = useState("");
   const [enviarRelatorio, setEnviarRelatorio] = useState(false);
 
-  const confirmar = () => {
-    toast.success("Consulta agendada com sucesso!");
+  const solicitar = () => {
+    toast.success("Solicitação enviada! Aguarde confirmação da clínica.");
     navigate("/chat");
   };
 
@@ -85,10 +85,10 @@ const Agendamento = () => {
           variant="hero"
           size="lg"
           className="w-full"
-          onClick={confirmar}
+          onClick={solicitar}
           disabled={!dia || !hora}
         >
-          Confirmar consulta
+          Solicitar consulta
         </Button>
       </motion.div>
     </div>
