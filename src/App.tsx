@@ -13,6 +13,7 @@ import BuscarClinicas from "./pages/BuscarClinicas";
 import Agendamento from "./pages/Agendamento";
 import Chat from "./pages/Chat";
 import Perfil from "./pages/Perfil";
+import Notificacoes from "./pages/Notificacoes";
 import ClinicaCadastro from "./pages/ClinicaCadastro";
 import ClinicaPainel from "./pages/ClinicaPainel";
 import ClinicaChat from "./pages/ClinicaChat";
@@ -37,6 +38,7 @@ const App = () => (
           <Route path="/agendamento" element={<Agendamento />} />
           <Route path="/chat" element={<Chat />} />
           <Route path="/perfil" element={<Perfil />} />
+          <Route path="/notificacoes" element={<Notificacoes />} />
           <Route path="/clinica/cadastro" element={<ClinicaCadastro />} />
           <Route path="/clinica/painel" element={<ClinicaPainel />} />
           <Route path="/clinica/chat" element={<ClinicaChat />} />
