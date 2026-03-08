@@ -1,44 +1,99 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, MapPin, Calendar, Heart, LogOut, Mail, Phone, Droplets, Weight, Ruler, PenSquare, Shield, Bell, ChevronRight } from "lucide-react";
+import { User, MapPin, Calendar, Heart, LogOut, Mail, Phone, Droplets, Weight, Ruler, PenSquare, Shield, Bell, ChevronRight, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import BottomNav from "@/components/BottomNav";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 
 const Perfil = () => {
   const navigate = useNavigate();
+  const [editing, setEditing] = useState(false);
   const [notificacoes, setNotificacoes] = useState(true);
   const [lembreteCiclo, setLembreteCiclo] = useState(true);
   const [lembreteConsulta, setLembreteConsulta] = useState(true);
 
+  const [dados, setDados] = useState({
+    nome: "Maria Silva",
+    idade: "28 anos",
+    cidade: "São Paulo, SP",
+    email: "maria@email.com",
+    telefone: "(11) 99999-0000",
+    ciclo: "Irregular",
+    duracao: "5 dias",
+    cicloMedio: "28 dias",
+    peso: "62 kg",
+    altura: "1,65 m",
+  });
+
+  const [editDados, setEditDados] = useState(dados);
+
+  const startEdit = () => {
+    setEditDados(dados);
+    setEditing(true);
+  };
+
+  const saveEdit = () => {
+    setDados(editDados);
+    setEditing(false);
+    toast.success("Perfil atualizado!");
+  };
+
+  const cancelEdit = () => {
+    setEditing(false);
+  };
+
+  const updateField = (field: string, value: string) => {
+    setEditDados(prev => ({ ...prev, [field]: value }));
+  };
+
   const infoItems = [
-    { icon: Calendar, label: "Idade", value: "28 anos" },
-    { icon: MapPin, label: "Cidade", value: "São Paulo, SP" },
-    { icon: Mail, label: "E-mail", value: "maria@email.com" },
-    { icon: Phone, label: "Telefone", value: "(11) 99999-0000" },
+    { icon: Calendar, label: "Idade", field: "idade" },
+    { icon: MapPin, label: "Cidade", field: "cidade" },
+    { icon: Mail, label: "E-mail", field: "email" },
+    { icon: Phone, label: "Telefone", field: "telefone" },
   ];
 
   const saudeItems = [
-    { icon: Heart, label: "Tipo de ciclo", value: "Irregular" },
-    { icon: Droplets, label: "Duração média", value: "5 dias" },
-    { icon: Calendar, label: "Ciclo médio", value: "28 dias" },
-    { icon: Weight, label: "Peso", value: "62 kg" },
-    { icon: Ruler, label: "Altura", value: "1,65 m" },
+    { icon: Heart, label: "Tipo de ciclo", field: "ciclo" },
+    { icon: Droplets, label: "Duração média", field: "duracao" },
+    { icon: Calendar, label: "Ciclo médio", field: "cicloMedio" },
+    { icon: Weight, label: "Peso", field: "peso" },
+    { icon: Ruler, label: "Altura", field: "altura" },
   ];
 
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
       <div className="gradient-hero px-6 pt-12 pb-8 rounded-b-[2rem] text-center relative">
-        <button className="absolute top-4 right-4 w-8 h-8 rounded-full bg-primary-foreground/20 flex items-center justify-center">
-          <PenSquare className="w-4 h-4 text-primary-foreground" />
-        </button>
+        {!editing ? (
+          <button onClick={startEdit} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-primary-foreground/20 flex items-center justify-center">
+            <PenSquare className="w-4 h-4 text-primary-foreground" />
+          </button>
+        ) : (
+          <div className="absolute top-4 right-4 flex gap-2">
+            <button onClick={saveEdit} className="w-8 h-8 rounded-full bg-primary-foreground/30 flex items-center justify-center">
+              <Check className="w-4 h-4 text-primary-foreground" />
+            </button>
+            <button onClick={cancelEdit} className="w-8 h-8 rounded-full bg-primary-foreground/20 flex items-center justify-center">
+              <X className="w-4 h-4 text-primary-foreground" />
+            </button>
+          </div>
+        )}
         <div className="w-20 h-20 rounded-full bg-primary-foreground/20 mx-auto flex items-center justify-center mb-3 ring-4 ring-primary-foreground/10">
           <User className="w-10 h-10 text-primary-foreground" />
         </div>
-        <h1 className="font-display text-xl font-bold text-primary-foreground">Maria Silva</h1>
-        <p className="text-sm text-primary-foreground/70">Membro desde Jan 2025</p>
+        {editing ? (
+          <input
+            value={editDados.nome}
+            onChange={e => updateField("nome", e.target.value)}
+            className="font-display text-xl font-bold text-primary-foreground bg-primary-foreground/10 rounded-xl px-4 py-2 text-center outline-none w-full max-w-[200px]"
+          />
+        ) : (
+          <h1 className="font-display text-xl font-bold text-primary-foreground">{dados.nome}</h1>
+        )}
+        <p className="text-sm text-primary-foreground/70 mt-1">Membro desde Jan 2025</p>
       </div>
 
       <div className="px-6 mt-6 space-y-5">
@@ -53,7 +108,15 @@ const Perfil = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-muted-foreground font-display">{item.label}</p>
-                  <p className="font-display font-semibold text-foreground text-sm truncate">{item.value}</p>
+                  {editing ? (
+                    <input
+                      value={(editDados as any)[item.field]}
+                      onChange={e => updateField(item.field, e.target.value)}
+                      className="font-display font-semibold text-foreground text-sm bg-muted rounded-lg px-2 py-1 w-full outline-none focus:ring-2 focus:ring-ring"
+                    />
+                  ) : (
+                    <p className="font-display font-semibold text-foreground text-sm truncate">{(dados as any)[item.field]}</p>
+                  )}
                 </div>
               </div>
             ))}
@@ -71,7 +134,15 @@ const Perfil = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-muted-foreground font-display">{item.label}</p>
-                  <p className="font-display font-semibold text-foreground text-sm">{item.value}</p>
+                  {editing ? (
+                    <input
+                      value={(editDados as any)[item.field]}
+                      onChange={e => updateField(item.field, e.target.value)}
+                      className="font-display font-semibold text-foreground text-sm bg-muted rounded-lg px-2 py-1 w-full outline-none focus:ring-2 focus:ring-ring"
+                    />
+                  ) : (
+                    <p className="font-display font-semibold text-foreground text-sm">{(dados as any)[item.field]}</p>
+                  )}
                 </div>
               </div>
             ))}
