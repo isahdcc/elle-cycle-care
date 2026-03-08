@@ -1,12 +1,18 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Download, Send, FileText, Calendar, TrendingUp, AlertTriangle, Activity, Brain } from "lucide-react";
+import { ArrowLeft, Download, Send, FileText, Calendar, TrendingUp, AlertTriangle, Activity, Brain, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import BottomNav from "@/components/BottomNav";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from "recharts";
 
-const dataGerado = "07/03/2026";
-const periodoAnalisado = "Dez 2025 — Mar 2026 (3 meses, 42 registros)";
+const periodos = [
+  { label: "Última semana", value: "week", gerado: "07/03/2026", periodo: "01 Mar — 07 Mar 2026 (7 dias, 6 registros)" },
+  { label: "Último mês", value: "month", gerado: "07/03/2026", periodo: "07 Fev — 07 Mar 2026 (1 mês, 18 registros)" },
+  { label: "Últimos 3 meses", value: "3months", gerado: "07/03/2026", periodo: "Dez 2025 — Mar 2026 (3 meses, 42 registros)" },
+  { label: "Últimos 6 meses", value: "6months", gerado: "07/03/2026", periodo: "Set 2025 — Mar 2026 (6 meses, 78 registros)" },
+  { label: "Último ano", value: "year", gerado: "07/03/2026", periodo: "Mar 2025 — Mar 2026 (12 meses, 156 registros)" },
+];
 
 const sintomasFrequentes = [
   { label: "Cólica intensa", pct: 85 },
@@ -64,6 +70,10 @@ const cicloHistorico = [
 
 const Relatorio = () => {
   const navigate = useNavigate();
+  const [periodoSelecionado, setPeriodoSelecionado] = useState("3months");
+  const [showPeriodos, setShowPeriodos] = useState(false);
+
+  const periodoAtual = periodos.find(p => p.value === periodoSelecionado)!;
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -77,25 +87,61 @@ const Relatorio = () => {
       </div>
 
       <div className="px-6 mt-4 space-y-4">
+        {/* Period Selector */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl shadow-card border border-border overflow-hidden">
+          <button
+            onClick={() => setShowPeriodos(!showPeriodos)}
+            className="w-full flex items-center justify-between px-5 py-4"
+          >
+            <div className="flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-primary" />
+              <div className="text-left">
+                <p className="font-display font-bold text-foreground text-sm">Período do relatório</p>
+                <p className="text-xs text-muted-foreground">{periodoAtual.label}</p>
+              </div>
+            </div>
+            <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${showPeriodos ? "rotate-180" : ""}`} />
+          </button>
+
+          {showPeriodos && (
+            <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} className="px-4 pb-4">
+              <div className="space-y-1">
+                {periodos.map(p => (
+                  <button
+                    key={p.value}
+                    onClick={() => { setPeriodoSelecionado(p.value); setShowPeriodos(false); }}
+                    className={`w-full text-left px-4 py-3 rounded-xl text-sm font-display font-medium transition-all ${
+                      periodoSelecionado === p.value
+                        ? "gradient-primary text-primary-foreground shadow-card"
+                        : "text-foreground hover:bg-muted"
+                    }`}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </motion.div>
+
         {/* Header Card */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl p-5 shadow-card border border-border">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="bg-card rounded-2xl p-5 shadow-card border border-border">
           <div className="flex items-center gap-2 mb-1">
             <FileText className="w-5 h-5 text-muted-foreground" />
             <h2 className="font-display font-bold text-foreground">DiagnELAs — Relatório</h2>
           </div>
-          <p className="text-xs text-muted-foreground">Gerado em {dataGerado}</p>
-
-          <div className="mt-4 flex items-start gap-2">
+          <p className="text-xs text-muted-foreground">Gerado em {periodoAtual.gerado}</p>
+          <div className="mt-3 flex items-start gap-2">
             <Calendar className="w-4 h-4 text-primary mt-0.5 shrink-0" />
             <div>
               <p className="font-display font-semibold text-sm text-foreground">Período analisado</p>
-              <p className="text-xs text-muted-foreground">{periodoAnalisado}</p>
+              <p className="text-xs text-muted-foreground">{periodoAtual.periodo}</p>
             </div>
           </div>
         </motion.div>
 
         {/* Sintomas mais frequentes */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="bg-card rounded-2xl p-5 shadow-card border border-border">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-card rounded-2xl p-5 shadow-card border border-border">
           <div className="flex items-center gap-2 mb-4">
             <TrendingUp className="w-5 h-5 text-primary" />
             <h3 className="font-display font-bold text-foreground">Sintomas mais frequentes</h3>
@@ -124,8 +170,8 @@ const Relatorio = () => {
           </div>
         </motion.div>
 
-        {/* Gráfico: Intensidade ao longo do ciclo */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-card rounded-2xl p-5 shadow-card border border-border">
+        {/* Gráfico de linha */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="bg-card rounded-2xl p-5 shadow-card border border-border">
           <div className="flex items-center gap-2 mb-4">
             <Activity className="w-5 h-5 text-primary" />
             <h3 className="font-display font-bold text-foreground">Intensidade ao longo do ciclo</h3>
@@ -148,8 +194,8 @@ const Relatorio = () => {
           </div>
         </motion.div>
 
-        {/* Distribuição de sintomas (Pie) */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="bg-card rounded-2xl p-5 shadow-card border border-border">
+        {/* Distribuição (Pie) */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-card rounded-2xl p-5 shadow-card border border-border">
           <h3 className="font-display font-bold text-foreground mb-4">Distribuição por categoria</h3>
           <div className="flex items-center gap-4">
             <ResponsiveContainer width={140} height={140}>
@@ -174,7 +220,7 @@ const Relatorio = () => {
         </motion.div>
 
         {/* Histórico de ciclos */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-card rounded-2xl p-5 shadow-card border border-border">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="bg-card rounded-2xl p-5 shadow-card border border-border">
           <h3 className="font-display font-bold text-foreground mb-4">Histórico de ciclos</h3>
           <ResponsiveContainer width="100%" height={160}>
             <BarChart data={cicloHistorico}>
@@ -187,13 +233,13 @@ const Relatorio = () => {
             </BarChart>
           </ResponsiveContainer>
           <div className="flex gap-4 mt-2 justify-center">
-            <span className="flex items-center gap-1 text-[10px] font-display"><span className="w-3 h-3 rounded-sm" style={{ background: "hsl(336, 100%, 48%)" }} /> Duração (dias)</span>
+            <span className="flex items-center gap-1 text-[10px] font-display"><span className="w-3 h-3 rounded-sm" style={{ background: "hsl(336, 100%, 48%)" }} /> Duração</span>
             <span className="flex items-center gap-1 text-[10px] font-display"><span className="w-3 h-3 rounded-sm" style={{ background: "hsl(320, 80%, 65%)" }} /> Intensidade</span>
           </div>
         </motion.div>
 
-        {/* Padrões detectados */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="bg-card rounded-2xl p-5 shadow-card border border-border">
+        {/* Padrões */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="bg-card rounded-2xl p-5 shadow-card border border-border">
           <h3 className="font-display font-bold text-foreground mb-3">Padrões detectados</h3>
           <ul className="space-y-2">
             {padroes.map((p, i) => (
@@ -205,8 +251,8 @@ const Relatorio = () => {
           </ul>
         </motion.div>
 
-        {/* Possíveis condições */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="bg-card rounded-2xl p-5 shadow-card border border-border">
+        {/* Condições */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }} className="bg-card rounded-2xl p-5 shadow-card border border-border">
           <div className="flex items-center gap-2 mb-3">
             <Brain className="w-5 h-5 text-primary" />
             <h3 className="font-display font-bold text-foreground">Possíveis condições sugeridas</h3>
@@ -232,7 +278,7 @@ const Relatorio = () => {
         </motion.div>
 
         {/* Recomendações */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }} className="bg-card rounded-2xl p-5 shadow-card border border-border">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="bg-card rounded-2xl p-5 shadow-card border border-border">
           <div className="flex items-center gap-2 mb-3">
             <AlertTriangle className="w-5 h-5 text-destructive" />
             <h3 className="font-display font-bold text-foreground">Recomendações</h3>
@@ -270,7 +316,7 @@ const Relatorio = () => {
             <Download className="w-4 h-4 mr-1" /> Baixar PDF
           </Button>
           <Button variant="hero-outline" size="lg" className="flex-1" onClick={() => navigate("/clinicas")}>
-            <Send className="w-4 h-4 mr-1" /> Enviar para médico
+            <Send className="w-4 h-4 mr-1" /> Enviar
           </Button>
         </div>
       </div>
