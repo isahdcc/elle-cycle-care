@@ -11,13 +11,16 @@ const HomePage = () => {
   const today = new Date();
   const cycleDay = 3;
 
-  // Mock calendar data
   const calendarDays = Array.from({ length: 31 }, (_, i) => ({
     day: i + 1,
     menstrual: i < 5,
     symptom: i === 7 || i === 14,
     predicted: i >= 25 && i <= 29,
   }));
+
+  const handleDayClick = (day: number) => {
+    navigate("/registrar");
+  };
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -28,7 +31,10 @@ const HomePage = () => {
             <Heart className="w-6 h-6 text-primary-foreground fill-primary-foreground" />
             <h1 className="font-display text-xl font-bold text-primary-foreground">DiagnELAs</h1>
           </div>
-          <button className="w-10 h-10 rounded-full bg-primary-foreground/20 flex items-center justify-center">
+          <button
+            onClick={() => navigate("/perfil")}
+            className="w-10 h-10 rounded-full bg-primary-foreground/20 flex items-center justify-center"
+          >
             <Bell className="w-5 h-5 text-primary-foreground" />
           </button>
         </div>
@@ -58,12 +64,12 @@ const HomePage = () => {
             ))}
           </div>
           <div className="grid grid-cols-7 gap-1">
-            {/* offset for month start (wednesday) */}
             {[0, 0, 0].map((_, i) => <div key={`e${i}`} />)}
             {calendarDays.map(d => (
-              <div
+              <button
                 key={d.day}
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium mx-auto ${
+                onClick={() => handleDayClick(d.day)}
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium mx-auto transition-all hover:ring-2 hover:ring-primary/30 ${
                   d.day === today.getDate()
                     ? "gradient-primary text-primary-foreground font-bold"
                     : d.menstrual
@@ -72,11 +78,11 @@ const HomePage = () => {
                     ? "bg-accent text-accent-foreground"
                     : d.symptom
                     ? "bg-destructive/10 text-destructive"
-                    : "text-foreground"
+                    : "text-foreground hover:bg-muted"
                 }`}
               >
                 {d.day}
-              </div>
+              </button>
             ))}
           </div>
           <div className="flex gap-4 mt-3 text-[10px] font-display">
@@ -94,15 +100,16 @@ const HomePage = () => {
           className="bg-card rounded-2xl p-4 shadow-card border border-border"
         >
           <h3 className="font-display font-bold text-foreground mb-3">Consultas agendadas</h3>
-          <div className="gradient-soft rounded-xl p-4 flex items-center justify-between">
+          <button
+            onClick={() => navigate("/agendamento")}
+            className="w-full gradient-soft rounded-xl p-4 flex items-center justify-between text-left hover:shadow-card transition-shadow"
+          >
             <div>
               <p className="font-display font-semibold text-foreground text-sm">Consulta — 14 junho</p>
               <p className="text-xs text-muted-foreground mt-0.5">Clínica Saúde da Mulher</p>
             </div>
-            <button onClick={() => navigate("/clinicas")} className="text-primary">
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </div>
+            <ChevronRight className="w-5 h-5 text-primary" />
+          </button>
         </motion.div>
 
         {/* CTA */}
