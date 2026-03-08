@@ -60,10 +60,10 @@ const HomePage = () => {
             <h1 className="font-display text-xl font-bold text-primary-foreground">DiagnELAs</h1>
           </div>
           <button
-            onClick={() => navigate("/perfil")}
-            className="w-10 h-10 rounded-full bg-primary-foreground/20 flex items-center justify-center"
+            className="w-10 h-10 rounded-full bg-primary-foreground/20 flex items-center justify-center relative"
           >
             <Bell className="w-5 h-5 text-primary-foreground" />
+            <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-destructive border-2 border-primary" />
           </button>
         </div>
 
@@ -160,15 +160,15 @@ const HomePage = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-foreground/40 z-50 flex items-end justify-center"
+            className="fixed inset-0 bg-foreground/40 z-50 flex items-center justify-center p-6"
             onClick={() => setSelectedDay(null)}
           >
             <motion.div
-              initial={{ y: 200 }}
-              animate={{ y: 0 }}
-              exit={{ y: 200 }}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
               onClick={e => e.stopPropagation()}
-              className="bg-card w-full max-w-md rounded-t-3xl p-6 pb-8"
+              className="bg-card w-full max-w-sm rounded-3xl p-6"
             >
               <div className="w-10 h-1 bg-muted rounded-full mx-auto mb-4" />
               <h3 className="font-display font-bold text-foreground text-lg mb-1">
